@@ -101,6 +101,65 @@ def _strip_quoted_reply(body: str) -> str:
     return "\n".join(clean).strip()
 
 
+def get_multiple_unread_emails(max_results: int = 10) -> list[ParsedEmail]:
+    """
+    Fetch up to max_results unread emails from the Primary inbox (last 7 days).
+    Excludes promotions, social, updates, and forum emails.
+    Returns an empty list if there are no qualifying unread messages.
+    """
+    service = _build_service()
+
+    query = (
+        "is:unread "
+        "in:inbox "
+        "newer_than:7d "
+        "-category:promotions "
+        "-category:updates "
+        "-category:social "
+        "-category:forums"
+    )
+
+    results = (
+        service.users()
+        .messages()
+        .list(userId="me", maxResults=max_results, q=query)
+        .execute()
+    )
+    messages = results.get("messages", [])
+    if not messages:
+        return []
+
+    parsed: list[ParsedEmail] = []
+    for message in messages:
+        msg_id = message["id"]
+        msg = (
+            service.users()
+            .messages()
+            .get(userId="me", id=msg_id, format="full")
+            .execute()
+        )
+        headers = {h["name"]: h["value"] for h in msg["payload"].get("headers", [])}
+        from_header = headers.get("From", "")
+        subject = headers.get("Subject", "(no subject)")
+
+        sender_name, sender_email_addr = _parse_sender(from_header)
+        body = _get_body(msg["payload"])
+        body = _strip_quoted_reply(body)
+
+        parsed.append(
+            ParsedEmail(
+                gmail_id=msg_id,
+                thread_id=msg["threadId"],
+                sender_name=sender_name,
+                sender_email=sender_email_addr,
+                subject=subject,
+                body=body,
+            )
+        )
+
+    return parsed
+
+
 def get_one_unread_email() -> Optional[ParsedEmail]:
     """
     Fetch the most recent unread email from the Primary inbox (last 7 days).

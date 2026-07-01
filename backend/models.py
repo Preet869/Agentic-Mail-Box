@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
 from pydantic import BaseModel
 
@@ -36,6 +36,13 @@ class ApproveResponse(BaseModel):
 
 class DiscardResponse(BaseModel):
     session: EmailSessionOut
+    message: str
+
+
+class FetchBatchResponse(BaseModel):
+    sessions: List[EmailSessionOut]
+    fetched: int
+    skipped: int
     message: str
 
 
