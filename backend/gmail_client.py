@@ -103,15 +103,26 @@ def _strip_quoted_reply(body: str) -> str:
 
 def get_one_unread_email() -> Optional[ParsedEmail]:
     """
-    Fetch the single oldest unread email from the inbox.
-    Returns None if there are no unread messages.
+    Fetch the most recent unread email from the Primary inbox (last 7 days).
+    Excludes promotions, social, updates, and forum emails.
+    Returns None if there are no qualifying unread messages.
     """
     service = _build_service()
+
+    query = (
+        "is:unread "
+        "in:inbox "
+        "newer_than:7d "
+        "-category:promotions "
+        "-category:updates "
+        "-category:social "
+        "-category:forums"
+    )
 
     results = (
         service.users()
         .messages()
-        .list(userId="me", labelIds=["INBOX", "UNREAD"], maxResults=1, q="is:unread")
+        .list(userId="me", maxResults=1, q=query)
         .execute()
     )
     messages = results.get("messages", [])
