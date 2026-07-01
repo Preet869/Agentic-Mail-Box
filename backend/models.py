@@ -17,6 +17,14 @@ class EmailSessionOut(BaseModel):
     created_at: datetime
     actioned_at: Optional[datetime]
 
+    # Stage 3 fields
+    priority_score: Optional[int] = None
+    priority_label: Optional[str] = None
+    detected_tone: Optional[str] = None
+    identified_tasks: Optional[str] = None   # JSON-encoded list[str]
+    agent_draft_v1: Optional[str] = None
+    self_critique: Optional[str] = None      # JSON-encoded list[str]
+
     model_config = {"from_attributes": True}
 
 
@@ -29,6 +37,13 @@ class FetchEmailResponse(BaseModel):
     message: str
 
 
+class FetchBatchResponse(BaseModel):
+    sessions: List[EmailSessionOut]
+    fetched: int
+    skipped: int
+    message: str
+
+
 class ApproveResponse(BaseModel):
     session: EmailSessionOut
     message: str
@@ -36,13 +51,6 @@ class ApproveResponse(BaseModel):
 
 class DiscardResponse(BaseModel):
     session: EmailSessionOut
-    message: str
-
-
-class FetchBatchResponse(BaseModel):
-    sessions: List[EmailSessionOut]
-    fetched: int
-    skipped: int
     message: str
 
 

@@ -85,7 +85,7 @@ export default function App() {
           </div>
           <span className="font-semibold text-slate-900 text-lg">Agentic Mail Box</span>
           <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
-            Stage 2
+            Stage 3
           </span>
         </div>
 
