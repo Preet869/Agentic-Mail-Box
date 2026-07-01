@@ -30,11 +30,12 @@ from database import (
     mark_sent,
     mark_discarded,
 )
-from gmail_client import get_one_unread_email, send_reply
+from gmail_client import get_one_unread_email, get_multiple_unread_emails, send_reply
 from models import (
     EmailSessionOut,
     UpdateDraftRequest,
     FetchEmailResponse,
+    FetchBatchResponse,
     ApproveResponse,
     DiscardResponse,
 )
@@ -105,6 +106,62 @@ async def fetch_email(db: AsyncSession = Depends(get_db)):
     return FetchEmailResponse(
         session=EmailSessionOut.model_validate(session),
         message="Email fetched and draft generated successfully.",
+    )
+
+
+@app.get("/api/emails/fetch-batch", response_model=FetchBatchResponse)
+async def fetch_email_batch(
+    max_results: int = 10, db: AsyncSession = Depends(get_db)
+):
+    """
+    Fetch up to max_results unread emails from Gmail, generate Claude drafts
+    for each new one concurrently, and return all sessions (new + existing).
+
+    Emails already in the DB (matched by gmail_id) are skipped — no duplicate
+    sessions and no wasted Claude calls.
+    """
+    emails = await asyncio.to_thread(get_multiple_unread_emails, max_results)
+    if not emails:
+        all_sessions = await list_sessions(db)
+        return FetchBatchResponse(
+            sessions=[EmailSessionOut.model_validate(s) for s in all_sessions],
+            fetched=0,
+            skipped=0,
+            message="No new unread emails found in inbox.",
+        )
+
+    new_emails = []
+    skipped = 0
+    for email in emails:
+        existing = await get_session_by_gmail_id(db, email.gmail_id)
+        if existing:
+            skipped += 1
+        else:
+            new_emails.append(email)
+
+    # Generate all drafts concurrently
+    if new_emails:
+        drafts = await asyncio.gather(
+            *[asyncio.to_thread(generate_draft_reply, email) for email in new_emails]
+        )
+        for email, draft in zip(new_emails, drafts):
+            await create_session(
+                db,
+                gmail_id=email.gmail_id,
+                sender_name=email.sender_name,
+                sender_email=email.sender_email,
+                subject=email.subject,
+                original_body=email.body,
+                agent_draft=draft,
+            )
+
+    all_sessions = await list_sessions(db)
+    fetched = len(new_emails)
+    return FetchBatchResponse(
+        sessions=[EmailSessionOut.model_validate(s) for s in all_sessions],
+        fetched=fetched,
+        skipped=skipped,
+        message=f"Fetched {fetched} new email(s), skipped {skipped} already processed.",
     )
 
 

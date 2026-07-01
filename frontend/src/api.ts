@@ -53,10 +53,22 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
+export interface FetchBatchResponse {
+  sessions: EmailSession[];
+  fetched: number;
+  skipped: number;
+  message: string;
+}
+
 export const api = {
   /** Fetch the oldest unread Gmail + generate an agent draft. */
   fetchEmail(): Promise<FetchEmailResponse> {
     return request<FetchEmailResponse>("/email/fetch");
+  },
+
+  /** Fetch up to max_results unread emails and generate drafts for all new ones. */
+  fetchEmails(maxResults = 10): Promise<FetchBatchResponse> {
+    return request<FetchBatchResponse>(`/emails/fetch-batch?max_results=${maxResults}`);
   },
 
   /** List all stored sessions, newest first. */
