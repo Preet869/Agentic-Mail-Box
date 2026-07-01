@@ -20,6 +20,18 @@ const STATUS_LABEL: Record<EmailSession["status"], string> = {
   discarded: "Discarded",
 };
 
+const PRIORITY_BADGE: Record<string, { bg: string; text: string }> = {
+  Critical: { bg: "bg-red-100", text: "text-red-700" },
+  High:     { bg: "bg-orange-100", text: "text-orange-700" },
+  Medium:   { bg: "bg-amber-100", text: "text-amber-700" },
+  Low:      { bg: "bg-blue-100", text: "text-blue-600" },
+  FYI:      { bg: "bg-slate-100", text: "text-slate-500" },
+};
+
+function prioritySortValue(s: EmailSession): number {
+  return s.priority_score ?? 0;
+}
+
 export function SessionSidebar({
   sessions,
   selectedId,
@@ -27,7 +39,9 @@ export function SessionSidebar({
   onSync,
   syncing,
 }: Props) {
-  const pending = sessions.filter((s) => s.status === "pending_review");
+  const pending = sessions
+    .filter((s) => s.status === "pending_review")
+    .sort((a, b) => prioritySortValue(b) - prioritySortValue(a)); // highest priority first
   const done = sessions.filter((s) => s.status !== "pending_review");
 
   return (
@@ -165,13 +179,23 @@ function SessionRow({
         <p className="text-xs text-slate-500 truncate mt-0.5">
           {session.subject ?? "(no subject)"}
         </p>
-        <div className="flex items-center gap-1 mt-1">
-          <span
-            className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[session.status]}`}
-          />
-          <span className="text-[10px] text-slate-400">
-            {STATUS_LABEL[session.status]}
-          </span>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <div className="flex items-center gap-1">
+            <span
+              className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[session.status]}`}
+            />
+            <span className="text-[10px] text-slate-400">
+              {STATUS_LABEL[session.status]}
+            </span>
+          </div>
+          {session.priority_label && (() => {
+            const style = PRIORITY_BADGE[session.priority_label] ?? PRIORITY_BADGE["Medium"];
+            return (
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${style.bg} ${style.text}`}>
+                {session.priority_label}
+              </span>
+            );
+          })()}
         </div>
       </div>
     </button>

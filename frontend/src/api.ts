@@ -17,6 +17,14 @@ export interface EmailSession {
   status: SessionStatus;
   created_at: string;
   actioned_at: string | null;
+
+  // Stage 3 — agentic analysis fields
+  priority_score: number | null;       // 1–5
+  priority_label: string | null;       // "Critical" | "High" | "Medium" | "Low" | "FYI"
+  detected_tone: string | null;        // "formal" | "casual" | "urgent" | etc.
+  identified_tasks: string | null;     // JSON-encoded string[]
+  agent_draft_v1: string | null;       // draft before self-correction
+  self_critique: string | null;        // JSON-encoded string[] of issues
 }
 
 export interface FetchEmailResponse {

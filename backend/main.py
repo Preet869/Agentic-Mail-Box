@@ -91,7 +91,7 @@ async def fetch_email(db: AsyncSession = Depends(get_db)):
             message="Email was already fetched — returning existing session.",
         )
 
-    draft = await asyncio.to_thread(generate_draft_reply, email)
+    result = await asyncio.to_thread(generate_draft_reply, email)
 
     session = await create_session(
         db,
@@ -100,7 +100,13 @@ async def fetch_email(db: AsyncSession = Depends(get_db)):
         sender_email=email.sender_email,
         subject=email.subject,
         original_body=email.body,
-        agent_draft=draft,
+        agent_draft=result.final_draft,
+        priority_score=result.priority_score,
+        priority_label=result.priority_label,
+        detected_tone=result.detected_tone,
+        identified_tasks=result.identified_tasks,
+        agent_draft_v1=result.agent_draft_v1,
+        self_critique=result.self_critique,
     )
 
     return FetchEmailResponse(
@@ -139,12 +145,12 @@ async def fetch_email_batch(
         else:
             new_emails.append(email)
 
-    # Generate all drafts concurrently
+    # Generate all drafts concurrently (full 3-step pipeline per email)
     if new_emails:
-        drafts = await asyncio.gather(
+        results = await asyncio.gather(
             *[asyncio.to_thread(generate_draft_reply, email) for email in new_emails]
         )
-        for email, draft in zip(new_emails, drafts):
+        for email, result in zip(new_emails, results):
             await create_session(
                 db,
                 gmail_id=email.gmail_id,
@@ -152,7 +158,13 @@ async def fetch_email_batch(
                 sender_email=email.sender_email,
                 subject=email.subject,
                 original_body=email.body,
-                agent_draft=draft,
+                agent_draft=result.final_draft,
+                priority_score=result.priority_score,
+                priority_label=result.priority_label,
+                detected_tone=result.detected_tone,
+                identified_tasks=result.identified_tasks,
+                agent_draft_v1=result.agent_draft_v1,
+                self_critique=result.self_critique,
             )
 
     all_sessions = await list_sessions(db)
