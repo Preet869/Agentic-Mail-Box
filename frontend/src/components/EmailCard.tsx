@@ -43,7 +43,24 @@ export function EmailCard({ session }: Props) {
     ? (() => { try { return JSON.parse(session.identified_tasks); } catch { return []; } })()
     : [];
 
-  const hasAnalysis = !!(session.priority_label || session.detected_tone || tasks.length > 0);
+  type ToolEntry = { tool: string; args: Record<string, string>; result: string };
+  const toolsUsed: ToolEntry[] = session.tools_used
+    ? (() => { try { return JSON.parse(session.tools_used); } catch { return []; } })()
+    : [];
+
+  const TOOL_ICONS: Record<string, string> = {
+    get_current_date: "📅",
+    check_holidays: "🗓",
+    scrape_url: "🔗",
+  };
+
+  const TOOL_LABELS: Record<string, string> = {
+    get_current_date: "Current Date",
+    check_holidays: "Holiday Check",
+    scrape_url: "Web Scrape",
+  };
+
+  const hasAnalysis = !!(session.priority_label || session.detected_tone || tasks.length > 0 || toolsUsed.length > 0);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -89,7 +106,7 @@ export function EmailCard({ session }: Props) {
 
           {/* Tasks */}
           {tasks.length > 0 && (
-            <div>
+            <div className={toolsUsed.length > 0 ? "mb-3" : ""}>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
                 Action items
               </p>
@@ -101,6 +118,33 @@ export function EmailCard({ session }: Props) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Tools used */}
+          {toolsUsed.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
+                Tools used by agent
+              </p>
+              <div className="space-y-2">
+                {toolsUsed.map((entry, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-1 bg-white/70 border border-slate-200 rounded-lg px-3 py-2"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">{TOOL_ICONS[entry.tool] ?? "🔧"}</span>
+                      <span className="text-xs font-semibold text-slate-700">
+                        {TOOL_LABELS[entry.tool] ?? entry.tool}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-snug line-clamp-2">
+                      {entry.result}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -25,6 +25,9 @@ class EmailSessionOut(BaseModel):
     agent_draft_v1: Optional[str] = None
     self_critique: Optional[str] = None      # JSON-encoded list[str]
 
+    # Stage 4 fields
+    tools_used: Optional[str] = None         # JSON-encoded list[dict]
+
     model_config = {"from_attributes": True}
 
 

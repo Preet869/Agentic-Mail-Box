@@ -107,6 +107,7 @@ async def fetch_email(db: AsyncSession = Depends(get_db)):
         identified_tasks=result.identified_tasks,
         agent_draft_v1=result.agent_draft_v1,
         self_critique=result.self_critique,
+        tools_used=result.tools_used,
     )
 
     return FetchEmailResponse(
@@ -165,6 +166,7 @@ async def fetch_email_batch(
                 identified_tasks=result.identified_tasks,
                 agent_draft_v1=result.agent_draft_v1,
                 self_critique=result.self_critique,
+                tools_used=result.tools_used,
             )
 
     all_sessions = await list_sessions(db)

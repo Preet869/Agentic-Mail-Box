@@ -42,6 +42,9 @@ class EmailSession(Base):
     agent_draft_v1: Mapped[Optional[str]] = mapped_column(nullable=True)       # draft before self-correction
     self_critique: Mapped[Optional[str]] = mapped_column(nullable=True)        # JSON-encoded list[str] of issues found
 
+    # --- Stage 4: Tool use ---
+    tools_used: Mapped[Optional[str]] = mapped_column(nullable=True)           # JSON-encoded list[dict]
+
 
 async def init_db() -> None:
     async with engine.begin() as conn:
@@ -56,6 +59,8 @@ async def init_db() -> None:
             "ALTER TABLE email_sessions ADD COLUMN identified_tasks TEXT",
             "ALTER TABLE email_sessions ADD COLUMN agent_draft_v1 TEXT",
             "ALTER TABLE email_sessions ADD COLUMN self_critique TEXT",
+            # Stage 4
+            "ALTER TABLE email_sessions ADD COLUMN tools_used TEXT",
         ]
         for stmt in new_columns:
             try:
@@ -80,13 +85,15 @@ async def create_session(
     subject: Optional[str],
     original_body: str,
     agent_draft: str,
-    # Stage 3 fields (optional so Stage 1/2 code paths still work)
+    # Stage 3 fields
     priority_score: Optional[int] = None,
     priority_label: Optional[str] = None,
     detected_tone: Optional[str] = None,
     identified_tasks: Optional[list[str]] = None,
     agent_draft_v1: Optional[str] = None,
     self_critique: Optional[list[str]] = None,
+    # Stage 4 fields
+    tools_used: Optional[list[dict]] = None,
 ) -> EmailSession:
     session = EmailSession(
         id=str(uuid.uuid4()),
@@ -102,6 +109,7 @@ async def create_session(
         identified_tasks=json.dumps(identified_tasks) if identified_tasks is not None else None,
         agent_draft_v1=agent_draft_v1,
         self_critique=json.dumps(self_critique) if self_critique is not None else None,
+        tools_used=json.dumps(tools_used) if tools_used is not None else None,
     )
     db.add(session)
     await db.commit()
