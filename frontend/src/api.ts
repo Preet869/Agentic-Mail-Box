@@ -25,6 +25,9 @@ export interface EmailSession {
   identified_tasks: string | null;     // JSON-encoded string[]
   agent_draft_v1: string | null;       // draft before self-correction
   self_critique: string | null;        // JSON-encoded string[] of issues
+
+  // Stage 4 — tool use
+  tools_used: string | null;           // JSON-encoded Array<{tool, args, result}>
 }
 
 export interface FetchEmailResponse {

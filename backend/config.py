@@ -9,5 +9,12 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./mailbox.db"
     CLAUDE_MODEL: str = "claude-opus-4-5"
 
+    # Stage 4 — AbstractAPI keys (matching .env variable names exactly)
+    Calendar: str = ""   # AbstractAPI Holidays API key
+    Scrape: str = ""     # AbstractAPI Web Scraping API key
+
+    # Default country code for holiday checks (ISO 3166-1 alpha-2)
+    DEFAULT_COUNTRY_CODE: str = "AU"
+
 
 settings = Settings()
