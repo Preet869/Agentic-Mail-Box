@@ -11,10 +11,6 @@ starting from a single email and growing into a multi-step agent with tool use a
 ---
 
 ## Architecture (at a glance)
-
-
-
-
 ```
 User ─► React UI ─► FastAPI (async) ─► ┌─ Gmail API
                                        ├─ Claude API  (analyse → [tools] → draft → critique)
