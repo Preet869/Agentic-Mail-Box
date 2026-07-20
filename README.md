@@ -9,10 +9,6 @@ starting from a single email and growing into a multi-step agent with tool use a
 > what I chose, what I rejected, and how it can fail.
 
 ---
-
-
-
-
 ## Architecture (at a glance)
 ```
 User ─► React UI ─► FastAPI (async) ─► ┌─ Gmail API
